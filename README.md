@@ -10,6 +10,5 @@ Features:
 Stack:
 - NextJS
 - TypeScript
-- Firebase
-- OAuth
+- Firebase/Firestore
 - Sass
