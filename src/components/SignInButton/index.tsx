@@ -8,14 +8,12 @@ import {signIn, signOut, useSession} from 'next-auth/react';
 export function SignInButton() {
 
     const { data: session, status } = useSession()
-    console.log(session);
-
     // ternary operator to decide which button shows on sign area. If user session is true, show
     // photo and username. If it is not, show login option.
     return status === 'authenticated' ? (
         <button className={style.SignInBtn}>
         <img src={session.user.image}/>
-        Ola, {session.user.name}!
+        Hi, {session.user.name}!
         <FiX color='#737380' className={style.closeIcon} onClick={() => signOut()}/>
         </button>
     ) :
