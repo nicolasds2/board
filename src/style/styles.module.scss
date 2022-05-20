@@ -58,15 +58,9 @@
         border-radius: 50%;
         border: 1px solid #141a29;
         transition: transform 0.2s;
-
-        & + img {
-            margin-left: 10px;
-        }
      
     }
-    img:hover {
-        transform: scale(1.2);
-    }
+    
 
     
 }

@@ -4,7 +4,8 @@ import { GetStaticProps } from 'next';
 import {database} from '../services/firebaseConnection'
 import { collection, getDocs, doc, query, where } from 'firebase/firestore'
 import {useState} from 'react'
-
+import Image from 'next/image'
+import boardUser from '../../public/images/board-user.svg'
 type Data = {
   id: string,
   donate: boolean,
@@ -22,7 +23,7 @@ export default function Home({data}: HomeProps) {
         <title>Board - Planning tasks</title>
       </Head>
       <main className={styles.contentContainer}>
-        <img src="images/board-user.svg" alt="" className={styles['board-user']}/>
+        <Image src={boardUser} alt="" className={styles['board-user']}/>
 
         <section className={styles.callToAction}>
           <h1>Keep the tasks up to date. No more messy days.</h1>
@@ -34,7 +35,9 @@ export default function Home({data}: HomeProps) {
         {donaters.length !== 0 && <h3>Sponsors:</h3>}
         <div className={styles.donaters}>
           {donaters.map(item => (
-            <img key={item.id} src={item.image} alt="" />
+            <div key={item.id}>
+              <Image width={65} height={65} src={item.image} alt="" />
+            </div>
           ))}
         </div>
       </main>

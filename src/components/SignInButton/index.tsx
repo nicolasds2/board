@@ -3,7 +3,7 @@ import { FaGithub } from "react-icons/fa";
 import { FiX } from "react-icons/fi";
 
 import {signIn, signOut, useSession} from 'next-auth/react';
-
+import Image from 'next/image'
 
 export function SignInButton() {
 
@@ -12,7 +12,9 @@ export function SignInButton() {
     // photo and username. If it is not, show login option.
     return status === 'authenticated' ? (
         <button className={style.SignInBtn}>
-        <img src={session.user.image}/>
+        <div>
+            <Image width={35} height={35} src={session.user.image} alt=''/>
+        </div>
         Hi, {session.user.name}!
         <FiX color='#737380' className={style.closeIcon} onClick={() => signOut()}/>
         </button>
