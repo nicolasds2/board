@@ -1,7 +1,9 @@
 import NextAuth from "next-auth"
 import GithubProvider from "next-auth/providers/github"
-import { signIn } from "next-auth/react"
-import { userInfo } from "os"
+import {database} from '../../../services/firebaseConnection'
+import { collection, getDoc, doc } from 'firebase/firestore'
+
+
 
 export default NextAuth({
   // Configure one or more authentication providers
@@ -19,41 +21,33 @@ export default NextAuth({
         // Send properties to the client, like an access_token from a provider.
         session.accessToken = token.accessToken
         try {
+
+          const docRef = doc(database, "users", String(token.sub))
+          const lastDonate = await getDoc(docRef)
+          .then((snapshot) => {
+            if (snapshot.exists) {
+              return snapshot.data().lastDonate.toDate()
+            }
+            else {
+              return null;
+            }
+          })
+
           return {
             ...session,
-            id: token.sub
+            id: token.sub,
+            vip: lastDonate ? true : false,
+            lastDonate: lastDonate
           }
         }
         catch {
           return {
             ...session,
-            id: null
+            id: null,
+            vip: false,
+            lastDonate: null
           }
         }
       }
-  //   async session ({session, user}) {
-  //     try {
-  //       return {
-  //         ...session,
-  //         id: user.id
-  //       }
-  //     }
-  //     catch {
-  //       return {
-  //         ...session,
-  //         id: null
-  //       }
-  //     }
-  //   },
-  //   async signIn({user, account, profile}) {
-  //     try {
-  //       return true
-  //     }
-  //     catch (err)
-  //     {
-  //       console.log('Error', err)
-  //       return false
-  //     }
-  //   }
    }
 })

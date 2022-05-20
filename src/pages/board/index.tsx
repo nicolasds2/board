@@ -4,12 +4,12 @@ import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/react';
 import {DonateButton} from '../../components/DonateButton';
 import styles from './styles.module.scss';
-import {FiPlusSquare, FiCalendar, FiEdit2, FiTrash, FiClock} from 'react-icons/fi';
+import {FiPlusSquare, FiCalendar, FiEdit2, FiTrash, FiClock, FiX} from 'react-icons/fi';
 import {database} from '../../services/firebaseConnection'
-import { collection, addDoc, getDocs, doc, query, where } from 'firebase/firestore'
-import {format} from 'date-fns';
+import { collection, addDoc, getDocs, doc, query, where, deleteDoc, updateDoc } from 'firebase/firestore'
+import {format, toDate, formatDistance} from 'date-fns';
+import {enUS} from 'date-fns/locale';
 import Link from 'next/link';
-import { StringLike } from '@firebase/util';
 
 
 type TaskList = {
@@ -24,6 +24,8 @@ interface BoardProps {
     user: {
         id: string;
         name: string;
+        vip: boolean,
+        lastDonate: string | Date
     }
     data: string
 }
@@ -34,6 +36,8 @@ export default function Board({user, data}: BoardProps) {
     const [input, setInput] = useState('')
     const [listTasks, setListTasks] = useState<TaskList[]>(JSON.parse(data))
     const dbInstance = collection(database, 'tasks')
+    const [taskEdit, setTaskEdit] = useState<TaskList | null>(null)
+
     async function addTask (e: FormEvent) {
         e.preventDefault();    
 
@@ -41,6 +45,24 @@ export default function Board({user, data}: BoardProps) {
             alert ('The field is empty!')
             return
         }
+
+        if (taskEdit) {
+            let taskRef = doc(database, 'tasks', taskEdit.id)
+            await updateDoc(taskRef, {
+                task: input
+            })
+            .then (() => {
+                let data = listTasks
+                let taskIndex = listTasks.findIndex(item => item.id === taskEdit.id)
+                data[taskIndex].task = input
+
+                setTaskEdit(null)
+                setInput('')
+            })
+
+            return
+        }
+
         await addDoc(dbInstance, {
             created: new Date(),
             task: input,
@@ -63,12 +85,47 @@ export default function Board({user, data}: BoardProps) {
             console.log('Error!', err)
         })
     }
+
+    async function deleteTask(id: string) {
+        await deleteDoc(doc(database, 'tasks', id))
+        .then (() => {
+            let deletedTask = listTasks.filter((item) => {
+                return (item.id !== id)
+
+            })
+            setListTasks(deletedTask)
+        })
+        
+        .catch ((err) => {
+            console.log ('error')
+        })
+             
+    }
+
+    async function editTask (task: TaskList) {
+        setTaskEdit(task)
+        setInput(task.task)
+    }
+
+    function cancelEdit () {
+        setInput('')
+        setTaskEdit(null)
+    }
     return (
         <>
         <Head>
             <title>My Tasks</title>
         </Head>
         <main className={styles.container}>
+
+            {taskEdit && (
+                <span className={styles.warnText}>
+                    <button onClick={cancelEdit}>
+                        <FiX size={20} color='#ff3636'/>
+                    </button>
+                    You are editing a task
+                </span>
+            )}
             <form onSubmit={addTask}>
                 <input type="text"
                 placeholder='Type your task...'
@@ -86,7 +143,7 @@ export default function Board({user, data}: BoardProps) {
             <section>
                 {
                     listTasks.map(task => (
-                    <article className={styles.taskList}>
+                    <article className={styles.taskList} key={task.id}>
                         <Link href={`/board/${task.id}`}>
                             <p>{task.task}</p>
                         </Link>
@@ -96,13 +153,16 @@ export default function Board({user, data}: BoardProps) {
                             <FiCalendar size={20} color='#ffb800'/>
                             <time>{task.createdFormated}</time>
                         </div>
-                        <button>
-                            <FiEdit2 size={20} color='#fff'/>
-                            <span>Edit</span>
-                        </button>
+                        {user.vip && (
+                            <button onClick={() => editTask(task)}>
+                                <FiEdit2 size={20} color='#fff'/>
+                                <span>Edit</span>
+                            </button>
+                        )}
+                        
                         
                     </div>
-                    <button>
+                    <button onClick={() => deleteTask(task.id)}>
                         <FiTrash size={20} color='#ff3636'/>
                         <span>Delete</span>
                     </button>
@@ -114,14 +174,17 @@ export default function Board({user, data}: BoardProps) {
                 
             </section>
         </main>
-
-        <div className={styles.vipContainer}>
+        
+        {user.vip && (
+            <div className={styles.vipContainer}>
             <h3>Thanks for support this project!</h3>
             <div>
                 <FiClock size={28} color='#fff'/>
-                <time>the last donation was 3 days ago</time>
+                <time>the last donation was {formatDistance(new Date(user.lastDonate), new Date(), {locale: enUS})}</time>
             </div>
         </div>
+        )}
+        
 
         <DonateButton/>
         </>
@@ -141,27 +204,26 @@ export const getServerSideProps: GetServerSideProps = async ({req}) => {
         }
     }
     
-    // const tasksCollections = collection(database, 'tasks');
-    // const docSnap = await getDoc(tasksRef);
-    // console.log('dados: '+ docSnap.data())
 
     const q = await query(collection(database, "tasks"), where("userId", "==", `${session.id}`));
 
     const tasks = await getDocs(q);
     const data =  JSON.stringify(tasks.docs.map(t => {
         return {
+
             id: t.id,
             createdFormated: format(t.data().created.toDate(), 'MMMM dd yyyy'),
             ...t.data(),
         }
     }))
-    console.log(data)
 
 
 
     const user = {
         name: session?.user.name,
-        id: session?.id
+        id: session?.id,
+        vip: session?.vip,
+        lastDonate: session?.lastDonate
     }
     return {
         props: {
