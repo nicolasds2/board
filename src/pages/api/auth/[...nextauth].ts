@@ -31,19 +31,20 @@ export default NextAuth({
             else {
               return null;
             }
+            
           })
-
           return {
             ...session,
             id: token.sub,
             vip: lastDonate ? true : false,
             lastDonate: lastDonate
           }
+          
         }
         catch {
           return {
             ...session,
-            id: null,
+            id: token.sub,
             vip: false,
             lastDonate: null
           }
