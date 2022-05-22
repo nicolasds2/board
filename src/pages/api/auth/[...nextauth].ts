@@ -21,10 +21,11 @@ export default NextAuth({
         // Send properties to the client, like an access_token from a provider.
         session.accessToken = token.accessToken
         try {
-
+          // Checking if user is a sponsor (vip)
           const docRef = doc(database, "users", String(token.sub))
           const lastDonate = await getDoc(docRef)
           .then((snapshot) => {
+            // Setting lastDonate var to show in "board" page
             if (snapshot.exists) {
               return snapshot.data().lastDonate.toDate()
             }
@@ -33,6 +34,7 @@ export default NextAuth({
             }
             
           })
+
           return {
             ...session,
             id: token.sub,
@@ -41,6 +43,7 @@ export default NextAuth({
           }
           
         }
+        // triggered when user is not a sponsor
         catch {
           return {
             ...session,

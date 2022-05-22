@@ -45,6 +45,7 @@ export default function Home({data}: HomeProps) {
   )
 }
 
+// Creating static page. It will refresh data in 60 min
 export const getStaticProps: GetStaticProps = async ({}) => {
   const donaters = await getDocs(query(collection(database, "users"), where("donate", "==", true)))
   const data = JSON.stringify(donaters.docs.map(u => {

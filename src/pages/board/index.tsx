@@ -22,8 +22,8 @@ type TaskList = {
 }
 interface BoardProps {
     user: {
-        id: string;
-        name: string;
+        id: string,
+        name: string,
         vip: boolean,
         lastDonate: string | Date
     }
